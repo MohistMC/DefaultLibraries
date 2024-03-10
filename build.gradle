@@ -1,0 +1,50 @@
+plugins {
+    id 'java'
+    id 'maven-publish'
+}
+
+group = 'com.mohistmc'
+version = '0.1'
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(17)
+}
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+    maven { url 'https://maven.mohistmc.com/' }
+}
+
+dependencies {
+    compileOnly 'org.projectlombok:lombok:1.18.30'
+    annotationProcessor 'org.projectlombok:lombok:1.18.30'
+
+    implementation 'com.mohistmc:tools:0.4'
+    implementation 'me.tongfei:progressbar:0.10.0'
+    implementation 'org.jline:jline:3.25.0'
+    implementation "org.jline:jline-reader:3.21.0"   // Dep of TerminalConsoleAppender
+    implementation "org.jline:jline-terminal:3.21.0" // Dep of TerminalConsoleAppender
+    implementation "org.jline:jline-terminal-jansi:3.21.0" // Dep of TerminalConsoleAppender
+    implementation "net.minecrell:terminalconsoleappender:1.4.0" // Dep of TerminalConsoleAppender
+}
+
+publishing {
+    publications {
+        maven(MavenPublication) {
+            groupId project.group
+            artifactId project.name.toLowerCase()
+            version project.version
+            from components.java
+        }
+    }
+
+    repositories {
+        mavenLocal()
+
+        maven {
+            name = "Mohist-Maven"
+            setUrl("file:/maven/")
+        }
+    }
+}
