@@ -13,12 +13,17 @@ public class Test {
     public static void main(String[] args) throws IOException {
         LibrariesDownloadQueue queue = LibrariesDownloadQueue.create()
                 .inputStream(Files.newInputStream(new File("libraries.txt").toPath()))
-                .downloadSource(null)
+                .parentDirectory("libraries")
+                .threadPoolSize(12)
+                .downloadSource("AUTO")
                 .build();
+
         LOGGER.info(queue.toString());
-        LOGGER.info("库文件检测中...");
-        LOGGER.info("下载源: " + queue.downloadSource);
+        LOGGER.info("The library file is being detected...");
+        LOGGER.info("Download the source: " + queue.downloadSource);
+
         queue.progressBar();
-        LOGGER.info("库文件检测完毕");
+
+        LOGGER.info("The library file has been detected");
     }
 }
