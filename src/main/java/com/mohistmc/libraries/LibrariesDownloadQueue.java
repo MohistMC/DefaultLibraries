@@ -51,13 +51,15 @@ public class LibrariesDownloadQueue {
     @ToString.Exclude
     public final Set<Libraries> allLibraries = new HashSet<>();
     @ToString.Exclude
-    private InputStream inputStream = null;
+    public InputStream inputStream = null;
     @ToString.Exclude
     public Set<Libraries> need_download = new LinkedHashSet<>();
+    @ToString.Exclude
+    public Set<Libraries> installer = new LinkedHashSet<>();
 
     public DownloadSource downloadSource = null;
     public int threadPoolSize = Runtime.getRuntime().availableProcessors();
-    private String parentDirectory = "libraries";
+    public String parentDirectory = "libraries";
     public String systemProperty = null;
 
 
@@ -211,6 +213,9 @@ public class LibrariesDownloadQueue {
             for (String line = b.readLine(); line != null; line = b.readLine()) {
                 Libraries libraries = Libraries.from(line);
                 allLibraries.add(libraries);
+                if (libraries.isInstaller()) {
+                    installer.add(libraries);
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
