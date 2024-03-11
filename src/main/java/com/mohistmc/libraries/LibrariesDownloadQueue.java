@@ -24,20 +24,10 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Objects;
-import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import lombok.ToString;
 import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarBuilder;
@@ -58,7 +48,6 @@ public class LibrariesDownloadQueue {
     public Set<Libraries> installer = new LinkedHashSet<>();
 
     public DownloadSource downloadSource = null;
-    public int threadPoolSize = Runtime.getRuntime().availableProcessors();
     public String parentDirectory = "libraries";
     public String systemProperty = null;
 
@@ -107,17 +96,6 @@ public class LibrariesDownloadQueue {
     }
 
     /**
-     * Set the thread pool size
-     *
-     * @param threadPoolSize Allows you to customize the size of the download thread pool
-     * @return Returns the current real column
-     */
-    public LibrariesDownloadQueue threadPoolSize(int threadPoolSize) {
-        this.threadPoolSize = Math.max(1, Math.min(Runtime.getRuntime().availableProcessors(), threadPoolSize));;
-        return this;
-    }
-
-    /**
      * Construct the final column
      * @return Construct the final column
      */
@@ -134,34 +112,31 @@ public class LibrariesDownloadQueue {
      */
     public void progressBar() {
         if (needDownload()) {
-            Queue<Libraries> queue = new ConcurrentLinkedQueue<>(need_download);
             ProgressBarBuilder builder = new ProgressBarBuilder().setTaskName("")
                     .setStyle(ProgressBarStyle.ASCII)
                     .setUpdateIntervalMillis(100)
                     .setInitialMax(need_download.size());
             try (ProgressBar pb = builder.build()) {
-                ExecutorService executor = Executors.newFixedThreadPool(threadPoolSize);
-                List<Future<?>> futures = new ArrayList<>();
-
-                AtomicInteger downloadedCount = new AtomicInteger(0);
-                while (!queue.isEmpty()) {
-                    Libraries lib = queue.poll();
-                    if (lib == null) continue;
-                    Runnable downloadTask = getRunnable(lib, pb, downloadedCount);
-                    Future<?> future = executor.submit(downloadTask);
-                    futures.add(future);
-                }
-
-                for (Future<?> future : futures) {
-                    if (future != null) {
-                        future.get();
+                for (Libraries lib : need_download) {
+                    File file = new File(parentDirectory, lib.path);
+                    try {
+                        file.getParentFile().mkdirs();
+                        String url;
+                        if (this.systemProperty != null) {
+                            url = this.systemProperty + lib.path;
+                        } else {
+                            url = this.downloadSource.url + lib.path;
+                        }
+                        ConnectionUtil.downloadFile(url, file);
+                        fail.remove(lib);
+                    } catch (Exception e) {
+                        if (!Objects.equals(MD5Util.get(file), lib.md5)) {
+                            file.delete();
+                        }
+                        fail.add(lib);
                     }
+                    pb.step();
                 }
-
-                executor.shutdown();
-                executor.awaitTermination(Long.MAX_VALUE, TimeUnit.MILLISECONDS);
-            } catch (ExecutionException | InterruptedException e) {
-                Thread.currentThread().interrupt();
             }
         }
         if (!fail.isEmpty()) {
@@ -179,33 +154,6 @@ public class LibrariesDownloadQueue {
         }
         return !need_download.isEmpty();
     }
-
-    private Runnable getRunnable(Libraries lib, ProgressBar pb, AtomicInteger downloadedCount) {
-        File file = new File(parentDirectory, lib.path);
-        return () -> {
-            try {
-                file.getParentFile().mkdirs();
-                String url;
-                if (this.systemProperty != null) {
-                    url = this.systemProperty + lib.path;
-                } else {
-                    url = this.downloadSource.url + lib.path;
-                }
-                ConnectionUtil.downloadFile(url, file);
-                synchronized (pb) {
-                    downloadedCount.addAndGet(1);
-                    pb.step();
-                }
-                fail.remove(lib);
-            } catch (Exception e) {
-                if (!Objects.equals(MD5Util.get(file), lib.md5)) {
-                    file.delete();
-                }
-                fail.add(lib);
-            }
-        };
-    }
-
 
     private void init() {
         try {

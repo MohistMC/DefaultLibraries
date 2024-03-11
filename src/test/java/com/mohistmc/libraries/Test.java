@@ -14,7 +14,6 @@ public class Test {
         LibrariesDownloadQueue queue = LibrariesDownloadQueue.create()
                 .inputStream(Files.newInputStream(new File("libraries.txt").toPath()))
                 .parentDirectory("libraries")
-                .threadPoolSize(12)
                 .downloadSource("AUTO")
                 .build();
 
