@@ -52,6 +52,8 @@ public class LibrariesDownloadQueue {
     private final Set<Libraries> librariesSet = new HashSet<>();
     @ToString.Exclude
     private InputStream inputStream = null;
+    @ToString.Exclude
+    public Set<Libraries> need_download = new LinkedHashSet<>();
 
     public DownloadSource downloadSource = null;
     public int threadPoolSize = Runtime.getRuntime().availableProcessors();
@@ -129,16 +131,7 @@ public class LibrariesDownloadQueue {
      * Download in the form of a progress bar
      */
     public void progressBar() {
-        Set<Libraries> need_download = new LinkedHashSet<>();
-        for (Libraries libraries : librariesSet) {
-            File lib = new File(parentDirectory, libraries.path);
-            if (lib.exists() && Objects.equals(MD5Util.get(lib), libraries.md5)) {
-                continue;
-            }
-            need_download.add(libraries);
-        }
-
-        if (!need_download.isEmpty()) {
+        if (needDownload()) {
             Queue<Libraries> queue = new ConcurrentLinkedQueue<>(need_download);
             ProgressBarBuilder builder = new ProgressBarBuilder().setTaskName("")
                     .setStyle(ProgressBarStyle.ASCII)
@@ -172,6 +165,17 @@ public class LibrariesDownloadQueue {
         if (!fail.isEmpty()) {
             progressBar();
         }
+    }
+
+    public boolean needDownload() {
+        for (Libraries libraries : librariesSet) {
+            File lib = new File(parentDirectory, libraries.path);
+            if (lib.exists() && Objects.equals(MD5Util.get(lib), libraries.md5)) {
+                continue;
+            }
+            need_download.add(libraries);
+        }
+        return !need_download.isEmpty();
     }
 
     private Runnable getRunnable(Libraries lib, ProgressBar pb, AtomicInteger downloadedCount) {
