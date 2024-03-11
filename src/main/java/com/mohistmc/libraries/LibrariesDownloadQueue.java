@@ -50,11 +50,14 @@ public class LibrariesDownloadQueue {
     private final Set<Libraries> fail = new HashSet<>();
     @ToString.Exclude
     private final Set<Libraries> librariesSet = new HashSet<>();
-    public DownloadSource downloadSource = null;
-    private String parentDirectory = "libraries";
-    public String systemProperty = null;
     @ToString.Exclude
     private InputStream inputStream = null;
+
+    public DownloadSource downloadSource = null;
+    public int threadPoolSize = Runtime.getRuntime().availableProcessors();
+    private String parentDirectory = "libraries";
+    public String systemProperty = null;
+
 
     public static LibrariesDownloadQueue create() {
         return new LibrariesDownloadQueue();
@@ -100,6 +103,17 @@ public class LibrariesDownloadQueue {
     }
 
     /**
+     * Set the thread pool size
+     *
+     * @param threadPoolSize Allows you to customize the size of the download thread pool
+     * @return Returns the current real column
+     */
+    public LibrariesDownloadQueue threadPoolSize(int threadPoolSize) {
+        this.threadPoolSize = Math.max(1, Math.min(Runtime.getRuntime().availableProcessors(), threadPoolSize));;
+        return this;
+    }
+
+    /**
      * Construct the final column
      * @return Construct the final column
      */
@@ -131,7 +145,7 @@ public class LibrariesDownloadQueue {
                     .setUpdateIntervalMillis(100)
                     .setInitialMax(need_download.size());
             try (ProgressBar pb = builder.build()) {
-                ExecutorService executor = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
+                ExecutorService executor = Executors.newFixedThreadPool(threadPoolSize);
                 List<Future<?>> futures = new ArrayList<>();
 
                 AtomicInteger downloadedCount = new AtomicInteger(0);
@@ -178,7 +192,7 @@ public class LibrariesDownloadQueue {
                 }
                 fail.remove(lib);
             } catch (Exception e) {
-                if (!MD5Util.get(file).equals(lib.md5)) {
+                if (!Objects.equals(MD5Util.get(file), lib.md5)) {
                     file.delete();
                 }
                 fail.add(lib);
