@@ -21,7 +21,9 @@ package com.mohistmc.libraries;
 import com.mohistmc.tools.MD5Util;
 import java.io.File;
 import lombok.AllArgsConstructor;
+import lombok.Data;
 
+@Data
 @AllArgsConstructor
 public class Libraries {
 
