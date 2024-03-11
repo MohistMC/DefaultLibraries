@@ -92,7 +92,7 @@ public class LibrariesDownloadQueue {
         try {
             this.downloadSource = DownloadSource.valueOf(downloadSource);
         } catch (Exception e) {
-            if (ConnectionUtil.canAccess(downloadSource)) {
+            if (ConnectionUtil.isValid(downloadSource) && ConnectionUtil.canAccess(downloadSource)) {
                 this.systemProperty = downloadSource;
             }
         }

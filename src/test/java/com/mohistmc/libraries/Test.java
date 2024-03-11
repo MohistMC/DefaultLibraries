@@ -13,6 +13,7 @@ public class Test {
     public static void main(String[] args) throws IOException {
         LibrariesDownloadQueue queue = LibrariesDownloadQueue.create()
                 .inputStream(Files.newInputStream(new File("libraries.txt").toPath()))
+                .downloadSource(null)
                 .build();
         LOGGER.info(queue.toString());
         LOGGER.info("库文件检测中...");
