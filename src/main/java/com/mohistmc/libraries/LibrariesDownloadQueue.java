@@ -4,8 +4,8 @@ import com.mohistmc.tools.ConnectionUtil;
 import com.mohistmc.tools.MD5Util;
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -23,29 +23,39 @@ import java.util.concurrent.atomic.AtomicInteger;
 import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarBuilder;
 import me.tongfei.progressbar.ProgressBarStyle;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
-public class Test {
+public class LibrariesDownloadQueue {
 
-    public static final Set<Libraries> fail = new HashSet<>();
-    private static final Set<Libraries> librariesSet = new HashSet<>();
-    public static Logger LOGGER = LogManager.getLogger();
+    private final Set<Libraries> fail = new HashSet<>();
+    private final Set<Libraries> librariesSet = new HashSet<>();
+    public DownloadSource downloadSource;
+    private String parentDirectory = "libraries";
+    private InputStream in = null;
 
-    public static void main(String[] args) {
-        if (System.getProperty("log4j.configurationFile") == null) {
-            System.setProperty("log4j.configurationFile", "log4j2.xml");
-        }
-
-        run();
+    public static LibrariesDownloadQueue create() {
+        return new LibrariesDownloadQueue();
     }
 
-    public static void run() {
+    public LibrariesDownloadQueue inputStream(InputStream in) {
+        this.in = in;
+        return this;
+    }
+
+    public LibrariesDownloadQueue file(String parentDirectory) {
+        this.parentDirectory = parentDirectory;
+        return this;
+    }
+
+    public LibrariesDownloadQueue build() {
+        downloadSource = DownloadSource.fast();
         init();
-        LOGGER.info("开始下载");
+        return this;
+    }
+
+    public void progressBar() {
         Set<Libraries> need_download = new LinkedHashSet<>();
         for (Libraries libraries : librariesSet) {
-            File lib = new File("libraries", libraries.path);
+            File lib = new File(parentDirectory, libraries.path);
             if (lib.exists() && Objects.equals(MD5Util.get(lib), libraries.md5)) {
                 continue;
             }
@@ -53,7 +63,6 @@ public class Test {
         }
 
         if (!need_download.isEmpty()) {
-            LOGGER.info("下载进度:");
             Queue<Libraries> queue = new ConcurrentLinkedQueue<>(need_download);
             ProgressBarBuilder builder = new ProgressBarBuilder().setTaskName("")
                     .setStyle(ProgressBarStyle.ASCII)
@@ -85,18 +94,16 @@ public class Test {
             }
         }
         if (!fail.isEmpty()) {
-            run();
-        } else {
-            LOGGER.info("下载完毕");
+            progressBar();
         }
     }
 
-    private static Runnable getRunnable(Libraries lib, ProgressBar pb, AtomicInteger downloadedCount) {
-        File file = new File("libraries", lib.path);
+    private Runnable getRunnable(Libraries lib, ProgressBar pb, AtomicInteger downloadedCount) {
+        File file = new File(parentDirectory, lib.path);
         return () -> {
             try {
                 file.getParentFile().mkdirs();
-                String url = DownloadSource.fast(lib);
+                String url = downloadSource.url + lib.path;
                 ConnectionUtil.downloadFile(url, file);
                 synchronized (pb) {
                     downloadedCount.addAndGet(1);
@@ -104,7 +111,7 @@ public class Test {
                 }
                 fail.remove(lib);
             } catch (Exception e) {
-                if (e.getMessage() != null && !"md5".equals(e.getMessage())) {
+                if (!MD5Util.get(file).equals(lib.md5)) {
                     file.delete();
                 }
                 fail.add(lib);
@@ -113,9 +120,9 @@ public class Test {
     }
 
 
-    public static void init() {
+    private void init() {
         try {
-            BufferedReader b = new BufferedReader(new InputStreamReader(Files.newInputStream(new File("libraries.txt").toPath())));
+            BufferedReader b = new BufferedReader(new InputStreamReader(in));
             for (String line = b.readLine(); line != null; line = b.readLine()) {
                 Libraries libraries = Libraries.from(line);
                 librariesSet.add(libraries);
@@ -123,5 +130,10 @@ public class Test {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    @Override
+    public String toString() {
+        return "LibrariesDownloadQueue(parentDirectory=" + this.parentDirectory + ", downloadSource=" + this.downloadSource + ")";
     }
 }

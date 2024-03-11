@@ -21,33 +21,28 @@ package com.mohistmc.libraries;
 import com.mohistmc.tools.ConnectionUtil;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Objects;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.ToString;
 
-@Getter
-@ToString
 @AllArgsConstructor
 public enum DownloadSource {
 
-    MOHISTMC_CHINA("http://s1.devicloud.cn:25119/libraries/"),
-    BMCLAPI2("https://bmclapi2.bangbang93.com/maven/"),
-    ALIYUN("https://maven.aliyun.com/repository/public/"),
-    MAVEN2("https://repo.maven.apache.org/maven2/"),
-    FORGE("https://files.minecraftforge.net/maven/"),
-    MOJANG("https://libraries.minecraft.net/"),
-    FABRICMC("https://maven.fabricmc.net/"),
-    NEOFORGED("https://maven.neoforged.net/releases/"),
-    MOHISTMC("https://maven.mohistmc.com/"),
-    MOHISTMC_OLD("https://maven.mohistmc.com/libraries/"),
+    MOHISTMC("https://maven.mohistmc.com/libraries/"),
+    CHINA("http://s1.devicloud.cn:25119/libraries/"),
     GITHUB("https://mohistmc.github.io/maven/");
 
-    private final String url;
+    public final String url;
 
-    public static String fast(Libraries config) {
-        String path = config.path;
-        List<String> all = Arrays.stream(values()).map(downloadSource -> downloadSource.getUrl() + path).collect(Collectors.toList());
-        return ConnectionUtil.fastURL(all);
+    public static DownloadSource fast() {
+        List<String> all1 = Arrays.stream(values()).map(downloadSource -> downloadSource.url).toList();
+        String fastURL = ConnectionUtil.fastURL(all1);
+
+        if (Objects.equals(CHINA.url, fastURL)) {
+            return CHINA;
+        } else if (Objects.equals(MOHISTMC.url, fastURL)) {
+            return MOHISTMC;
+        } else {
+            return GITHUB;
+        }
     }
 }

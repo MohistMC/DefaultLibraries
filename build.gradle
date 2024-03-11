@@ -22,11 +22,12 @@ dependencies {
 
     implementation 'com.mohistmc:tools:0.4'
     implementation 'me.tongfei:progressbar:0.10.0'
-    implementation 'org.jline:jline:3.25.0'
-    implementation "org.jline:jline-reader:3.21.0"   // Dep of TerminalConsoleAppender
-    implementation "org.jline:jline-terminal:3.21.0" // Dep of TerminalConsoleAppender
-    implementation "org.jline:jline-terminal-jansi:3.21.0" // Dep of TerminalConsoleAppender
-    implementation "net.minecrell:terminalconsoleappender:1.4.0" // Dep of TerminalConsoleAppender
+
+    testImplementation 'org.jline:jline:3.25.0'
+    testImplementation "org.jline:jline-reader:3.21.0"   // Dep of TerminalConsoleAppender
+    testImplementation "org.jline:jline-terminal:3.21.0" // Dep of TerminalConsoleAppender
+    testImplementation "org.jline:jline-terminal-jansi:3.21.0" // Dep of TerminalConsoleAppender
+    testImplementation "net.minecrell:terminalconsoleappender:1.4.0" // Dep of TerminalConsoleAppender
 }
 
 publishing {
