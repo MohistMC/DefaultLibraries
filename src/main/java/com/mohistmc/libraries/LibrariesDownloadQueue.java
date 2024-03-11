@@ -49,7 +49,7 @@ public class LibrariesDownloadQueue {
     @ToString.Exclude
     private final Set<Libraries> fail = new HashSet<>();
     @ToString.Exclude
-    private final Set<Libraries> librariesSet = new HashSet<>();
+    public final Set<Libraries> allLibraries = new HashSet<>();
     @ToString.Exclude
     private InputStream inputStream = null;
     @ToString.Exclude
@@ -168,7 +168,7 @@ public class LibrariesDownloadQueue {
     }
 
     public boolean needDownload() {
-        for (Libraries libraries : librariesSet) {
+        for (Libraries libraries : allLibraries) {
             File lib = new File(parentDirectory, libraries.path);
             if (lib.exists() && Objects.equals(MD5Util.get(lib), libraries.md5)) {
                 continue;
@@ -210,7 +210,7 @@ public class LibrariesDownloadQueue {
             BufferedReader b = new BufferedReader(new InputStreamReader(inputStream));
             for (String line = b.readLine(); line != null; line = b.readLine()) {
                 Libraries libraries = Libraries.from(line);
-                librariesSet.add(libraries);
+                allLibraries.add(libraries);
             }
         } catch (Exception e) {
             e.printStackTrace();
