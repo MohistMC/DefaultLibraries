@@ -1,3 +1,21 @@
+/*
+ * Mohist - MohistMC
+ * Copyright (C) 2018-2024.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package com.mohistmc.libraries;
 
 import com.mohistmc.tools.ConnectionUtil;
@@ -20,38 +38,82 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import lombok.ToString;
 import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarBuilder;
 import me.tongfei.progressbar.ProgressBarStyle;
 
+@ToString
 public class LibrariesDownloadQueue {
 
+    @ToString.Exclude
     private final Set<Libraries> fail = new HashSet<>();
+    @ToString.Exclude
     private final Set<Libraries> librariesSet = new HashSet<>();
-    public DownloadSource downloadSource;
+    public DownloadSource downloadSource = null;
     private String parentDirectory = "libraries";
-    private InputStream in = null;
+    public String systemProperty = null;
+    @ToString.Exclude
+    private InputStream inputStream = null;
 
     public static LibrariesDownloadQueue create() {
         return new LibrariesDownloadQueue();
     }
 
-    public LibrariesDownloadQueue inputStream(InputStream in) {
-        this.in = in;
+    /**
+     * Set the input stream for the list that needs to be downloaded
+     *
+     * @param inputStream The input stream of the target file
+     * @return Returns the current real column
+     */
+    public LibrariesDownloadQueue inputStream(InputStream inputStream) {
+        this.inputStream = inputStream;
         return this;
     }
 
-    public LibrariesDownloadQueue file(String parentDirectory) {
+    /**
+     * Set the file download directory
+     *
+     * @param parentDirectory The path to which the file is downloaded
+     * @return Returns the current real column
+     */
+    public LibrariesDownloadQueue parentDirectory(String parentDirectory) {
         this.parentDirectory = parentDirectory;
         return this;
     }
 
+    /**
+     * Set up a custom download source
+     *
+     * @param downloadSource You can get the enumeration name in the configuration file or customize the system attributes
+     * @return Returns the current real column
+     */
+    public LibrariesDownloadQueue downloadSource(String downloadSource) {
+        try {
+            this.downloadSource = DownloadSource.valueOf(downloadSource);
+        } catch (Exception e) {
+            if (ConnectionUtil.canAccess(downloadSource)) {
+                this.systemProperty = downloadSource;
+            }
+        }
+        return this;
+    }
+
+    /**
+     * Construct the final column
+     * @return Construct the final column
+     */
     public LibrariesDownloadQueue build() {
-        downloadSource = DownloadSource.fast();
+        if (downloadSource == null) {
+            downloadSource = DownloadSource.fast();
+        }
         init();
         return this;
     }
 
+    /**
+     * Download in the form of a progress bar
+     */
     public void progressBar() {
         Set<Libraries> need_download = new LinkedHashSet<>();
         for (Libraries libraries : librariesSet) {
@@ -103,7 +165,12 @@ public class LibrariesDownloadQueue {
         return () -> {
             try {
                 file.getParentFile().mkdirs();
-                String url = downloadSource.url + lib.path;
+                String url;
+                if (this.systemProperty != null) {
+                    url = this.systemProperty + lib.path;
+                } else {
+                    url = this.downloadSource.url + lib.path;
+                }
                 ConnectionUtil.downloadFile(url, file);
                 synchronized (pb) {
                     downloadedCount.addAndGet(1);
@@ -122,7 +189,7 @@ public class LibrariesDownloadQueue {
 
     private void init() {
         try {
-            BufferedReader b = new BufferedReader(new InputStreamReader(in));
+            BufferedReader b = new BufferedReader(new InputStreamReader(inputStream));
             for (String line = b.readLine(); line != null; line = b.readLine()) {
                 Libraries libraries = Libraries.from(line);
                 librariesSet.add(libraries);
@@ -130,10 +197,5 @@ public class LibrariesDownloadQueue {
         } catch (Exception e) {
             e.printStackTrace();
         }
-    }
-
-    @Override
-    public String toString() {
-        return "LibrariesDownloadQueue(parentDirectory=" + this.parentDirectory + ", downloadSource=" + this.downloadSource + ")";
     }
 }
