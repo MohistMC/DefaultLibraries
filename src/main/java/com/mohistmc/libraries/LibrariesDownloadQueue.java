@@ -86,7 +86,11 @@ public class LibrariesDownloadQueue {
      */
     public LibrariesDownloadQueue downloadSource(String downloadSource) {
         try {
-            this.downloadSource = DownloadSource.valueOf(downloadSource);
+            if (downloadSource.startsWith("MOHIST")) {
+                this.downloadSource = DownloadSource.MOHISTMC;
+            } else {
+                this.downloadSource = DownloadSource.valueOf(downloadSource);
+            }
         } catch (Exception e) {
             if (ConnectionUtil.isValid(downloadSource) && ConnectionUtil.canAccess(downloadSource)) {
                 this.systemProperty = downloadSource;
