@@ -22,6 +22,7 @@ import com.mohistmc.tools.ConnectionUtil;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -36,7 +37,7 @@ public enum DownloadSource {
     public final String url;
 
     public static DownloadSource fast() {
-        List<String> all1 = Arrays.stream(values()).map(downloadSource -> downloadSource.url).toList();
+        List<String> all1 = Arrays.stream(values()).filter(downloadSource -> downloadSource != GITHUB).map(downloadSource -> downloadSource.url).collect(Collectors.toList());
         String fastURL = ConnectionUtil.fastURL(all1);
 
         if (Objects.equals(CHINA.url, fastURL)) {
