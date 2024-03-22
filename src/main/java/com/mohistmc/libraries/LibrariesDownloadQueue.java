@@ -50,6 +50,7 @@ public class LibrariesDownloadQueue {
     public DownloadSource downloadSource = null;
     public String parentDirectory = "libraries";
     public String systemProperty = null;
+    public boolean debug = Boolean.getBoolean("libraries.debug");
 
 
     public static LibrariesDownloadQueue create() {
@@ -131,10 +132,13 @@ public class LibrariesDownloadQueue {
                         } else {
                             url = this.downloadSource.url + lib.path;
                         }
+                        url = url.replaceAll("\\\\", "/");
+                        debug(url);
+                        debug(file.toString());
                         ConnectionUtil.downloadFile(url.replaceAll("\\\\", "/"), file);
                         fail.remove(lib);
                     } catch (Exception e) {
-                        if (!Objects.equals(MD5Util.get(file), lib.md5)) {
+                        if (e.getMessage() != null && !"md5".equals(e.getMessage())) {
                             file.delete();
                         }
                         fail.add(lib);
@@ -142,9 +146,9 @@ public class LibrariesDownloadQueue {
                     pb.step();
                 }
             }
-        }
-        if (!fail.isEmpty()) {
-            progressBar();
+            if (!fail.isEmpty()) {
+                progressBar();
+            }
         }
     }
 
@@ -172,5 +176,9 @@ public class LibrariesDownloadQueue {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void debug(String log){
+        System.out.println(log);
     }
 }
