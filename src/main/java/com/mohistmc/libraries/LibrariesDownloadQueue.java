@@ -131,7 +131,7 @@ public class LibrariesDownloadQueue {
                         } else {
                             url = this.downloadSource.url + lib.path;
                         }
-                        ConnectionUtil.downloadFile(url, file);
+                        ConnectionUtil.downloadFile(url.replaceAll("\\\\", "/"), file);
                         fail.remove(lib);
                     } catch (Exception e) {
                         if (!Objects.equals(MD5Util.get(file), lib.md5)) {
