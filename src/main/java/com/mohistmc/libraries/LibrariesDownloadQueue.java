@@ -24,8 +24,11 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import lombok.ToString;
@@ -46,6 +49,7 @@ public class LibrariesDownloadQueue {
     public Set<Libraries> need_download = new LinkedHashSet<>();
     @ToString.Exclude
     public Set<Libraries> installer = new LinkedHashSet<>();
+    public List<URL> installerTourls = new ArrayList<>();
 
     public DownloadSource downloadSource = null;
     public String parentDirectory = "libraries";
@@ -141,14 +145,15 @@ public class LibrariesDownloadQueue {
                         if (e.getMessage() != null && !"md5".equals(e.getMessage())) {
                             file.delete();
                         }
+                        debug(e.getMessage());
                         fail.add(lib);
                     }
                     pb.step();
                 }
             }
-            if (!fail.isEmpty()) {
-                progressBar();
-            }
+        }
+        if (!fail.isEmpty()) {
+            progressBar();
         }
     }
 
@@ -170,7 +175,10 @@ public class LibrariesDownloadQueue {
                 Libraries libraries = Libraries.from(line);
                 allLibraries.add(libraries);
                 if (libraries.isInstaller()) {
+                    File file = new File(parentDirectory, libraries.getPath());
+                    URL url = file.toURI().toURL();
                     installer.add(libraries);
+                    installerTourls.add(url);
                 }
             }
         } catch (Exception e) {
@@ -179,6 +187,6 @@ public class LibrariesDownloadQueue {
     }
 
     public void debug(String log){
-        System.out.println(log);
+        if (debug) System.out.println(log);
     }
 }
