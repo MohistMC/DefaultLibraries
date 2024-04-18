@@ -19,7 +19,7 @@ public class Test {
 
         LOGGER.info(queue.toString());
         LOGGER.info("The library file is being detected...");
-        LOGGER.info("Download the source: " + queue.downloadSource);
+        LOGGER.info("Download the source: {}", queue.downloadSource);
 
         queue.progressBar();
 
