@@ -12,8 +12,9 @@ public class LibraryLoaderTest {
 
     public static void main(String[] args) {
         LibraryLoader queue = LibraryLoader.create("Test")
-                .source("https://repo.maven.apache.org/maven2/")
-                .libraries(List.of("com.squareup.okio:okio:3.5.0"))
+                //.source("https://repo.maven.apache.org/maven2/")
+                .source("https://maven.aliyun.com/repository/public/")
+                .libraries(List.of("com.vk.api:sdk:1.0.14"))
                 .build();
 
         for (URL url : queue.getJarFiles()) {

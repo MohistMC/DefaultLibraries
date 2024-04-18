@@ -122,9 +122,7 @@ public class LibraryLoader {
             String mavenUrl = source + "%s/%s/%s/%s".formatted(group, dependency.name(), dependency.version(), fileName);
             File file = new File(targetFile, "%s/%s/%s/%s".formatted(group, dependency.name(), dependency.version(), fileName));
 
-            if (file.exists()) {
-                System.out.printf("[%s] Found libraries %s%n", plugin, file);
-                libraries.add(file);
+            if (has(dependency)) {
                 continue;
             }
             try {
@@ -162,6 +160,11 @@ public class LibraryLoader {
                 continue;
             }
             list.add(dependency);
+
+            if (dependencyIgnoreVersion.contains(dependency.toIgnoreVersion())) {
+                continue;
+            }
+            dependencyIgnoreVersion.add(dependency.toIgnoreVersion());
             if (dependency.extra()) {
                 String group = dependency.group().replace(".", "/");
                 String fileName = "%s-%s.pom".formatted(dependency.name(), dependency.version());
@@ -174,7 +177,9 @@ public class LibraryLoader {
 
     public Set<Dependency> initDependencies(String url) {
         Set<Dependency> list = new HashSet<>();
-        Json json2Json = Json.readXml(url).at("project");
+        Json json = Json.readXml(url);
+        if (json == null) return list;
+        Json json2Json = json.at("project");
         String version = json2Json.has("parent") ? json2Json.at("parent").asString("version") : json2Json.asString("version");
         String groupId = json2Json.has("parent") ? json2Json.at("parent").asString("groupId") : json2Json.asString("groupId");
 
@@ -196,6 +201,9 @@ public class LibraryLoader {
         try {
             if (json.has("groupId") && json.has("artifactId")) {
                 String groupId = json.asString("groupId");
+                if (groupId.startsWith("${") ) {
+                    groupId = parent_groupId;
+                }
                 String artifactId = json.asString("artifactId");
                 DependencyIgnoreVersion d = new DependencyIgnoreVersion(groupId, artifactId);
                 if (dependencyIgnoreVersion.contains(d)) {
@@ -204,13 +212,10 @@ public class LibraryLoader {
                 if (json.has("optional")) {
                     return;
                 }
+                if (json.has("scope") && (json.asString("scope").equals("test") || json.asString("scope").equals("provided"))) {
+                    return;
+                }
                 if (json.has("version")) {
-                    if (json.has("scope") && (json.asString("scope").equals("test") || json.asString("scope").equals("provided"))) {
-                        return;
-                    }
-                    if (groupId.equals("${project.parent.groupId}")) {
-                        groupId = parent_groupId;
-                    }
                     String versionAsString = json.asString("version");
                     if (versionAsString.contains("${project.version}") || versionAsString.contains("${project.parent.version}")) {
                         Dependency dependency = new Dependency(groupId, artifactId, version, true);
@@ -220,7 +225,9 @@ public class LibraryLoader {
                         list.add(dependency);
                     }
                 } else {
-                    list.add(findDependency(groupId, artifactId, true));
+                    if (json.has("scope") && json.asString("scope").equals("compile")) {
+                        list.add(findDependency(groupId, artifactId, true));
+                    }
                 }
             }
         } catch (Exception e) {
@@ -238,11 +245,10 @@ public class LibraryLoader {
     public Set<Dependency> findDependency(Set<Dependency> dependencySet) {
         Set<Dependency> list = new HashSet<>();
         for (Dependency dependency : dependencySet) {
-            DependencyIgnoreVersion d = new DependencyIgnoreVersion(dependency.group, dependency.name);
-            if (dependencyIgnoreVersion.contains(d)) {
+            if (dependencyIgnoreVersion.contains(dependency.toIgnoreVersion())) {
                 continue;
             }
-            dependencyIgnoreVersion.add(d);
+            dependencyIgnoreVersion.add(dependency.toIgnoreVersion());
             String group = dependency.group.replace(".", "/");
             String fileName = "%s-%s.pom".formatted(dependency.name, dependency.version);
             String pomUrl = source + "%s/%s/%s/%s".formatted(group, dependency.name, dependency.version, fileName);
@@ -259,14 +265,22 @@ public class LibraryLoader {
         File file = new File(targetFile, "%s/%s/%s/%s".formatted(dependency.group, dependency.name, dependency.version(), fileName));
 
         if (file.exists()) {
-            System.out.printf("[%s] Found libraries %s%n", plugin, file);
-            libraries.add(file);
-            return true;
+            if (!dependencyIgnoreVersion.contains(dependency.toIgnoreVersion())) {
+                libraries.add(file);
+                dependencyIgnoreVersion.add(dependency.toIgnoreVersion());
+                System.out.printf("[%s] Found libraries %s%n", plugin, file);
+                return true;
+            }
         }
         return false;
     }
 
     public record Dependency(String group, String name, String version, boolean extra) {
+
+
+        public DependencyIgnoreVersion toIgnoreVersion() {
+            return new DependencyIgnoreVersion(group, name);
+        }
     }
 
     public record DependencyIgnoreVersion(String group, String name) {
