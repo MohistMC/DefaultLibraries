@@ -47,6 +47,7 @@ public class LibraryLoader {
     private String source;
     private List<String> desc = new ArrayList<>();
     private List<String> mohistLibs = new ArrayList<>();
+    private File targetFile = new File("libraries", "plugins-lib");
 
     @Getter
     private final List<URL> jarFiles = new ArrayList<>();
@@ -72,6 +73,11 @@ public class LibraryLoader {
 
     public LibraryLoader mohistLibs(List<String> mohistLibs) {
         this.mohistLibs = mohistLibs;
+        return this;
+    }
+
+    public LibraryLoader targetFile(File targetFile) {
+        this.targetFile = targetFile;
         return this;
     }
 
@@ -114,7 +120,7 @@ public class LibraryLoader {
             String fileName = "%s-%s.jar".formatted(dependency.name(), dependency.version());
 
             String mavenUrl = source + "%s/%s/%s/%s".formatted(group, dependency.name(), dependency.version(), fileName);
-            File file = new File(new File("libraries", "plugins-lib"), "%s/%s/%s/%s".formatted(group, dependency.name(), dependency.version(), fileName));
+            File file = new File(targetFile, "%s/%s/%s/%s".formatted(group, dependency.name(), dependency.version(), fileName));
 
             if (file.exists()) {
                 System.out.printf("[%s] Found libraries %s%n", plugin, file);
@@ -250,7 +256,7 @@ public class LibraryLoader {
 
     public boolean has(Dependency dependency) {
         String fileName = "%s-%s.jar".formatted(dependency.name(), dependency.version());
-        File file = new File(new File("libraries", "plugins-lib"), "%s/%s/%s/%s".formatted(dependency.group, dependency.name, dependency.version(), fileName));
+        File file = new File(targetFile, "%s/%s/%s/%s".formatted(dependency.group, dependency.name, dependency.version(), fileName));
 
         if (file.exists()) {
             System.out.printf("[%s] Found libraries %s%n", plugin, file);
