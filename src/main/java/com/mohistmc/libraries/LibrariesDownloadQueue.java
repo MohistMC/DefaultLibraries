@@ -40,9 +40,9 @@ import me.tongfei.progressbar.ProgressBarStyle;
 public class LibrariesDownloadQueue {
 
     @ToString.Exclude
-    private final Set<Libraries> fail = new HashSet<>();
-    @ToString.Exclude
     public final Set<Libraries> allLibraries = new HashSet<>();
+    @ToString.Exclude
+    private final Set<Libraries> fail = new HashSet<>();
     @ToString.Exclude
     public InputStream inputStream = null;
     @ToString.Exclude
@@ -106,6 +106,7 @@ public class LibrariesDownloadQueue {
 
     /**
      * Construct the final column
+     *
      * @return Construct the final column
      */
     public LibrariesDownloadQueue build() {
@@ -128,24 +129,19 @@ public class LibrariesDownloadQueue {
             try (ProgressBar pb = builder.build()) {
                 for (Libraries lib : need_download) {
                     File file = new File(parentDirectory, lib.path);
-                    try {
-                        file.getParentFile().mkdirs();
-                        String url;
-                        if (this.systemProperty != null) {
-                            url = this.systemProperty + lib.path;
-                        } else {
-                            url = this.downloadSource.url + lib.path;
-                        }
-                        url = url.replaceAll("\\\\", "/");
-                        debug(url);
-                        debug(file.toString());
-                        ConnectionUtil.downloadFile(url.replaceAll("\\\\", "/"), file);
+                    file.getParentFile().mkdirs();
+                    String url;
+                    if (this.systemProperty != null) {
+                        url = this.systemProperty + lib.path;
+                    } else {
+                        url = this.downloadSource.url + lib.path;
+                    }
+                    url = url.replaceAll("\\\\", "/");
+                    if (ConnectionUtil.downloadFile(url, file)) {
+                        debug("downloadFile: OK");
                         fail.remove(lib);
-                    } catch (Exception e) {
-                        if (e.getMessage() != null && !"md5".equals(e.getMessage())) {
-                            file.delete();
-                        }
-                        debug(e.getMessage());
+                    } else {
+                        debug("downloadFile: No " + url);
                         fail.add(lib);
                     }
                     pb.step();
@@ -186,7 +182,7 @@ public class LibrariesDownloadQueue {
         }
     }
 
-    public void debug(String log){
-        if (debug) System.out.println(log);
+    public void debug(String log) {
+        if (debug) System.out.println(log + "\n");
     }
 }

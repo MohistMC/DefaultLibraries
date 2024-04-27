@@ -11,13 +11,13 @@ public class Test {
     public static final Logger LOGGER = LogManager.getLogger();
 
     public static void main(String[] args) throws IOException {
+
         LibrariesDownloadQueue queue = LibrariesDownloadQueue.create()
                 .inputStream(Files.newInputStream(new File("libraries.txt").toPath()))
                 .parentDirectory("libraries")
-                .downloadSource("AUTO")
+                .downloadSource("CHINA")
                 .build();
 
-        LOGGER.info(queue.toString());
         LOGGER.info("The library file is being detected...");
         LOGGER.info("Download the source: {}", queue.downloadSource);
 

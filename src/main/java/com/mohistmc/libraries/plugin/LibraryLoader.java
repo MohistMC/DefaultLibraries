@@ -44,25 +44,23 @@ public class LibraryLoader {
     private final Set<Dependency> newDependencies = new HashSet<>();
     private final Set<DependencyIgnoreVersion> dependencyIgnoreVersion = new HashSet<>();
     private final String plugin;
+    @Getter
+    private final List<URL> jarFiles = new ArrayList<>();
     private String source;
     private List<String> desc = new ArrayList<>();
     private List<String> mohistLibs = new ArrayList<>();
     private File targetFile = new File("libraries", "plugins-lib");
 
-    @Getter
-    private final List<URL> jarFiles = new ArrayList<>();
+    public LibraryLoader(String plugin) {
+        this.plugin = plugin;
+    }
 
     public static LibraryLoader create(String plugin) {
         return new LibraryLoader(plugin);
     }
 
-
-    public LibraryLoader(String plugin) {
-        this.plugin = plugin;
-    }
-
     public LibraryLoader source(String source) {
-        this.source =  source;
+        this.source = source;
         return this;
     }
 
@@ -156,7 +154,7 @@ public class LibraryLoader {
     public Set<Dependency> initDependencies0(String url) {
         Set<Dependency> list = new HashSet<>();
         for (Dependency dependency : initDependencies(url)) {
-            if (newDependencies.contains(dependency)){
+            if (newDependencies.contains(dependency)) {
                 continue;
             }
             list.add(dependency);
@@ -201,7 +199,7 @@ public class LibraryLoader {
         try {
             if (json.has("groupId") && json.has("artifactId")) {
                 String groupId = json.asString("groupId");
-                if (groupId.startsWith("${") ) {
+                if (groupId.startsWith("${")) {
                     groupId = parent_groupId;
                 }
                 String artifactId = json.asString("artifactId");

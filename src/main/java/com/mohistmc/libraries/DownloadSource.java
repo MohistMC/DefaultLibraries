@@ -31,7 +31,7 @@ import lombok.Getter;
 public enum DownloadSource {
 
     MOHISTMC("https://maven.mohistmc.com/libraries/"),
-    CHINA("https://libraries.mohistmc.cn:25119/releases/"),
+    CHINA("https://libraries.mohistmc.cn:25119/releases/libraries/"),
     GITHUB("https://mohistmc.github.io/maven/");
 
     public final String url;
