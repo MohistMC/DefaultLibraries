@@ -31,21 +31,27 @@ import lombok.Getter;
 public enum DownloadSource {
 
     MOHISTMC("https://maven.mohistmc.com/libraries/"),
-    CHINA("http://s1.devicloud.cn:25119/libraries/"),
+    CHINA("https://libraries.mohistmc.cn:25119/releases/"),
     GITHUB("https://mohistmc.github.io/maven/");
 
     public final String url;
 
     public static DownloadSource fast() {
-        List<String> all1 = Arrays.stream(values()).filter(downloadSource -> downloadSource != GITHUB).map(downloadSource -> downloadSource.url).collect(Collectors.toList());
+        List<String> all1 = Arrays.stream(values()).filter(downloadSource -> downloadSource != GITHUB)
+                .map(downloadSource -> fixChinaUrl(downloadSource.url))
+                .collect(Collectors.toList());
         String fastURL = ConnectionUtil.fastURL(all1);
 
-        if (Objects.equals(CHINA.url, fastURL)) {
+        if (Objects.equals(fixChinaUrl(CHINA.url), fastURL)) {
             return CHINA;
         } else if (Objects.equals(MOHISTMC.url, fastURL)) {
             return MOHISTMC;
         } else {
             return GITHUB;
         }
+    }
+
+    public static String fixChinaUrl(String url) {
+        return url.replace("releases/", "");
     }
 }
